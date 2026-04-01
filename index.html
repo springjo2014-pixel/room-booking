@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한국한자연구소 공간 예약 시스템</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:#f5f5f5;color:#222}
+.header{background:#2c3e50;color:#fff;padding:16px 24px;text-align:center}
+.header h1{font-size:18px;font-weight:500}
+.header p{font-size:13px;opacity:.7;margin-top:4px}
+.wrap{max-width:720px;margin:24px auto;padding:0 16px}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab{padding:8px 20px;border-radius:8px;border:1px solid #ccc;background:#fff;font-size:14px;cursor:pointer;color:#666}
+.tab.active{background:#2c3e50;color:#fff;border-color:#2c3e50}
+.card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:20px;margin-bottom:12px}
+.section-label{font-size:12px;color:#888;margin-bottom:8px}
+.room-pills{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.room-pill{padding:8px 16px;border-radius:8px;border:1px solid #ccc;font-size:13px;cursor:pointer;color:#666;background:#fff}
+.room-pill.active{background:#27ae60;color:#fff;border-color:#27ae60}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-nav{background:#fff;border:1px solid #ccc;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:#333}
+.cal-title{font-size:15px;font-weight:500}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dow{text-align:center;font-size:11px;color:#999;padding:4px 0}
+.cal-day{text-align:center;padding:7px 2px;font-size:13px;border-radius:8px;cursor:pointer;border:1px solid transparent;position:relative}
+.cal-day:hover:not(.empty):not(.past){background:#f0f0f0}
+.cal-day.today{font-weight:700;color:#2980b9}
+.cal-day.selected{background:#2c3e50;color:#fff}
+.cal-day.past{color:#ccc;cursor:default}
+.cal-day.empty{cursor:default}
+.cal-day.has-booking::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#e67e22}
+.time-section-title{font-size:11px;color:#999;margin:10px 0 4px;grid-column:1/-1}
+.time-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.time-slot{padding:7px 4px;border:1px solid #ddd;border-radius:8px;font-size:12px;text-align:center;cursor:pointer;color:#555;background:#fff}
+.time-slot:hover:not(.booked){background:#f0f0f0}
+.time-slot.selected{background:#2980b9;color:#fff;border-color:#2980b9}
+.time-slot.booked{background:#fdecea;color:#c0392b;cursor:default}
+.form-row{margin-bottom:12px}
+.form-label{font-size:13px;color:#666;margin-bottom:4px;display:block}
+input[type=text],input[type=tel]{width:100%;padding:9px 12px;font-size:14px;border:1px solid #ddd;border-radius:8px;outline:none}
+input[type=text]:focus,input[type=tel]:focus{border-color:#2c3e50}
+.agree-box{display:flex;gap:10px;align-items:flex-start;padding:12px;background:#fffbf0;border-radius:8px;border:1px solid #f0d080;margin-bottom:12px}
+.agree-box input[type=checkbox]{width:16px;height:16px;margin-top:2px;flex-shrink:0;cursor:pointer}
+.agree-text{font-size:12px;color:#555;line-height:1.7}
+.agree-text strong{color:#c0392b}
+.btn-submit{width:100%;padding:12px;background:#2c3e50;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer}
+.btn-submit:disabled{opacity:.4;cursor:default}
+.notice{font-size:12px;color:#888;padding:8px 10px;background:#f9f9f9;border-radius:8px;margin-bottom:12px;line-height:1.6}
+.summary-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.sum-card{background:#f9f9f9;border-radius:8px;padding:12px}
+.sum-label{font-size:11px;color:#888}
+.sum-val{font-size:22px;font-weight:500;color:#2c3e50}
+.booking-item{padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.booking-name{font-size:14px;font-weight:500}
+.booking-meta{font-size:12px;color:#888;margin-top:2px}
+.btn-cancel{font-size:12px;padding:5px 12px;border:1px solid #e74c3c;border-radius:6px;color:#e74c3c;background:#fff;cursor:pointer}
+.sync-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;color:#888}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#27ae60;flex-shrink:0}
+.sync-dot.loading{background:#f39c12;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.empty-state{text-align:center;padding:2rem;color:#aaa;font-size:13px}
+h3{font-size:15px;font-weight:500;margin-bottom:12px}
+select{font-size:13px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>한국한자연구소 공간 예약 시스템</h1>
+  <p>경성대학교 한국한자연구소 · 303호</p>
+</div>
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('booking')">공간 예약</button>
+    <button class="tab" onclick="switchTab('admin')">관리자</button>
+  </div>
+  <div id="tab-booking">
+    <div class="sync-bar">
+      <div class="sync-dot loading" id="sync-dot"></div>
+      <span id="sync-msg">예약 현황 불러오는 중...</span>
+    </div>
+    <div class="card">
+      <div class="section-label">공간 선택</div>
+      <div class="room-pills">
+        <div class="room-pill active" id="pill-0" onclick="selectRoom(0)">303-1호 아이트래커 실험실</div>
+        <div class="room-pill" id="pill-1" onclick="selectRoom(1)">303-2호 한자 콘텐츠 제작실</div>
+      </div>
+      <div class="section-label">날짜 선택</div>
+      <div class="cal-header">
+        <button class="cal-nav" onclick="changeMonth(-1)">&#8249;</button>
+        <span class="cal-title" id="cal-title"></span>
+        <button class="cal-nav" onclick="changeMonth(1)">&#8250;</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+    <div class="card" id="time-card" style="display:none">
+      <h3 id="time-card-title">시간대 선택</h3>
+      <div class="notice">예약 단위는 1시간이며, 연속 선택이 가능합니다. (24시간 운영)</div>
+      <div class="time-grid" id="time-grid"></div>
+    </div>
+    <div class="card" id="form-card" style="display:none">
+      <h3>예약자 정보 입력</h3>
+      <div class="form-row">
+        <label class="form-label">이름</label>
+        <input type="text" id="inp-name" placeholder="홍길동">
+      </div>
+      <div class="form-row">
+        <label class="form-label">연락처</label>
+        <input type="tel" id="inp-tel" placeholder="010-0000-0000">
+      </div>
+      <div class="form-row">
+        <label class="form-label">소속 / 사용 목적</label>
+        <input type="text" id="inp-purpose" placeholder="예: 한자연구소 / 실험 진행">
+      </div>
+      <div class="agree-box">
+        <input type="checkbox" id="chk-agree">
+        <div class="agree-text">
+          본인은 공간 사용 시간 동안 발생하는 <strong>장비 사용, 공간 정리, 안전 관리 및 출입 관리에 대한 모든 책임</strong>을 짐을 확인하고 동의합니다. 공간 사용 후에는 원상복구하여야 하며, 장비 파손 또는 안전사고 발생 시 사용자가 책임을 집니다.
+        </div>
+      </div>
+      <button class="btn-submit" id="btn-submit" onclick="submitBooking()">예약 신청</button>
+    </div>
+  </div>
+  <div id="tab-admin" style="display:none">
+    <div class="summary-bar">
+      <div class="sum-card"><div class="sum-label">전체 예약</div><div class="sum-val" id="sum-total">-</div></div>
+      <div class="sum-card"><div class="sum-label">303-1호</div><div class="sum-val" id="sum-r0">-</div></div>
+      <div class="sum-card"><div class="sum-label">303-2호</div><div class="sum-val" id="sum-r1">-</div></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h3>예약 목록</h3>
+        <div style="display:flex;gap:6px">
+          <select id="admin-room-filter" onchange="renderAdmin()">
+            <option value="all">전체 공간</option>
+            <option value="0">303-1호</option>
+            <option value="1">303-2호</option>
+          </select>
+          <select id="admin-sort" onchange="renderAdmin()">
+            <option value="date-asc">날짜 오름차순</option>
+            <option value="date-desc">날짜 내림차순</option>
+          </select>
+          <button onclick="loadBookings()" style="font-size:12px;padding:5px 10px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer">새로고침</button>
+        </div>
+      </div>
+      <div id="admin-list"><div class="empty-state">불러오는 중...</div></div>
+    </div>
+  </div>
+</div>
+<script>
+const GAS_URL='https://script.google.com/macros/s/AKfycbw3JmP1432SYs2bZk6UesihY1coWHyc-C3G2tRKYNkJibVOS54ah7o6qSOtOi66FYBFuQ/exec';
+const ROOMS=['303-1호 아이트래커 실험실','303-2호 한자 콘텐츠 제작실'];
+const SLOTS=[];
+for(let h=0;h<24;h++){const s=String(h).padStart(2,'0')+':00';const e=h+1<24?String(h+1).padStart(2,'0')+':00':'24:00';SLOTS.push(s+'~'+e);}
+const TIME_SECTIONS=[{label:'새벽',range:[0,6]},{label:'오전',range:[6,12]},{label:'오후',range:[12,18]},{label:'야간',range:[18,24]}];
+let state={room:0,year:new Date().getFullYear(),month:new Date().getMonth(),day:null,selSlots:[],bookings:[]};
+async function loadBookings(){setSyncState(true);try{const res=await fetch(GAS_URL+'?action=getAll');const data=await res.json();state.bookings=data.map(r=>({id:String(r['ID']),room:parseInt(r['공간번호']),roomName:r['공간명'],date:r['날짜'],slotLabels:r['시간대'],slots:SLOTS.map((s,i)=>String(r['시간대']).includes(s)?i:-1).filter(i=>i>=0),name:r['이름'],tel:r['연락처'],purpose:r['소속/목적']}));setSyncState(false,'실시간 연동 중 · 마지막 업데이트: '+new Date().toLocaleTimeString('ko-KR'));renderCal();}catch(e){setSyncState(false,'연결 오류 — 새로고침 해주세요');document.getElementById('sync-dot').style.background='#e74c3c';}}
+function setSyncState(loading,msg){const dot=document.getElementById('sync-dot');dot.className='sync-dot'+(loading?' loading':'');if(msg)document.getElementById('sync-msg').textContent=msg;}
+function selectRoom(r){state.room=r;state.day=null;state.selSlots=[];document.querySelectorAll('.room-pill').forEach((p,i)=>p.classList.toggle('active',i===r));document.getElementById('time-card').style.display='none';document.getElementById('form-card').style.display='none';renderCal();}
+function changeMonth(d){state.month+=d;if(state.month>11){state.month=0;state.year++;}if(state.month<0){state.month=11;state.year--;}state.day=null;state.selSlots=[];document.getElementById('time-card').style.display='
