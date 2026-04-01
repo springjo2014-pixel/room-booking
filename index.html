@@ -72,8 +72,8 @@ select{font-size:13px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;ba
 </div>
 <div class="wrap">
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('booking')">공간 예약</button>
-    <button class="tab" onclick="switchTab('admin')">관리자</button>
+    <button class="tab active" id="tab-btn-booking" onclick="window.switchTab('booking')">공간 예약</button>
+    <button class="tab" id="tab-btn-admin" onclick="window.switchTab('admin')">관리자</button>
   </div>
   <div id="tab-booking">
     <div class="sync-bar">
@@ -83,14 +83,14 @@ select{font-size:13px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;ba
     <div class="card">
       <div class="section-label">공간 선택</div>
       <div class="room-pills">
-        <div class="room-pill active" id="pill-0" onclick="selectRoom(0)">303-1호 아이트래커 실험실</div>
-        <div class="room-pill" id="pill-1" onclick="selectRoom(1)">303-2호 한자 콘텐츠 제작실</div>
+        <div class="room-pill active" id="pill-0" onclick="window.selectRoom(0)">303-1호 아이트래커 실험실</div>
+        <div class="room-pill" id="pill-1" onclick="window.selectRoom(1)">303-2호 한자 콘텐츠 제작실</div>
       </div>
       <div class="section-label">날짜 선택</div>
       <div class="cal-header">
-        <button class="cal-nav" onclick="changeMonth(-1)">&#8249;</button>
+        <button class="cal-nav" onclick="window.changeMonth(-1)">&#8249;</button>
         <span class="cal-title" id="cal-title"></span>
-        <button class="cal-nav" onclick="changeMonth(1)">&#8250;</button>
+        <button class="cal-nav" onclick="window.changeMonth(1)">&#8250;</button>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
     </div>
@@ -115,11 +115,9 @@ select{font-size:13px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;ba
       </div>
       <div class="agree-box">
         <input type="checkbox" id="chk-agree">
-        <div class="agree-text">
-          본인은 공간 사용 시간 동안 발생하는 <strong>장비 사용, 공간 정리, 안전 관리 및 출입 관리에 대한 모든 책임</strong>을 짐을 확인하고 동의합니다. 공간 사용 후에는 원상복구하여야 하며, 장비 파손 또는 안전사고 발생 시 사용자가 책임을 집니다.
-        </div>
+        <div class="agree-text">본인은 공간 사용 시간 동안 발생하는 <strong>장비 사용, 공간 정리, 안전 관리 및 출입 관리에 대한 모든 책임</strong>을 짐을 확인하고 동의합니다. 공간 사용 후에는 원상복구하여야 하며, 장비 파손 또는 안전사고 발생 시 사용자가 책임을 집니다.</div>
       </div>
-      <button class="btn-submit" id="btn-submit" onclick="submitBooking()">예약 신청</button>
+      <button class="btn-submit" id="btn-submit" onclick="window.submitBooking()">예약 신청</button>
     </div>
   </div>
   <div id="tab-admin" style="display:none">
@@ -132,16 +130,16 @@ select{font-size:13px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;ba
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <h3>예약 목록</h3>
         <div style="display:flex;gap:6px">
-          <select id="admin-room-filter" onchange="renderAdmin()">
+          <select id="admin-room-filter" onchange="window.renderAdmin()">
             <option value="all">전체 공간</option>
             <option value="0">303-1호</option>
             <option value="1">303-2호</option>
           </select>
-          <select id="admin-sort" onchange="renderAdmin()">
+          <select id="admin-sort" onchange="window.renderAdmin()">
             <option value="date-asc">날짜 오름차순</option>
             <option value="date-desc">날짜 내림차순</option>
           </select>
-          <button onclick="loadBookings()" style="font-size:12px;padding:5px 10px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer">새로고침</button>
+          <button onclick="window.loadBookings()" style="font-size:12px;padding:5px 10px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer">새로고침</button>
         </div>
       </div>
       <div id="admin-list"><div class="empty-state">불러오는 중...</div></div>
@@ -155,7 +153,32 @@ const SLOTS=[];
 for(let h=0;h<24;h++){const s=String(h).padStart(2,'0')+':00';const e=h+1<24?String(h+1).padStart(2,'0')+':00':'24:00';SLOTS.push(s+'~'+e);}
 const TIME_SECTIONS=[{label:'새벽',range:[0,6]},{label:'오전',range:[6,12]},{label:'오후',range:[12,18]},{label:'야간',range:[18,24]}];
 let state={room:0,year:new Date().getFullYear(),month:new Date().getMonth(),day:null,selSlots:[],bookings:[]};
-async function loadBookings(){setSyncState(true);try{const res=await fetch(GAS_URL+'?action=getAll');const data=await res.json();state.bookings=data.map(r=>({id:String(r['ID']),room:parseInt(r['공간번호']),roomName:r['공간명'],date:r['날짜'],slotLabels:r['시간대'],slots:SLOTS.map((s,i)=>String(r['시간대']).includes(s)?i:-1).filter(i=>i>=0),name:r['이름'],tel:r['연락처'],purpose:r['소속/목적']}));setSyncState(false,'실시간 연동 중 · 마지막 업데이트: '+new Date().toLocaleTimeString('ko-KR'));renderCal();}catch(e){setSyncState(false,'연결 오류 — 새로고침 해주세요');document.getElementById('sync-dot').style.background='#e74c3c';}}
+
+window.loadBookings=async function(){
+  setSyncState(true);
+  try{
+    const res=await fetch(GAS_URL+'?action=getAll');
+    const data=await res.json();
+    state.bookings=data.map(r=>({id:String(r['ID']),room:parseInt(r['공간번호']),roomName:r['공간명'],date:r['날짜'],slotLabels:r['시간대'],slots:SLOTS.map((s,i)=>String(r['시간대']).includes(s)?i:-1).filter(i=>i>=0),name:r['이름'],tel:r['연락처'],purpose:r['소속/목적']}));
+    setSyncState(false,'실시간 연동 중 · 마지막 업데이트: '+new Date().toLocaleTimeString('ko-KR'));
+    renderCal();
+  }catch(e){setSyncState(false,'연결 오류 — 새로고침 해주세요');document.getElementById('sync-dot').style.background='#e74c3c';}
+};
 function setSyncState(loading,msg){const dot=document.getElementById('sync-dot');dot.className='sync-dot'+(loading?' loading':'');if(msg)document.getElementById('sync-msg').textContent=msg;}
-function selectRoom(r){state.room=r;state.day=null;state.selSlots=[];document.querySelectorAll('.room-pill').forEach((p,i)=>p.classList.toggle('active',i===r));document.getElementById('time-card').style.display='none';document.getElementById('form-card').style.display='none';renderCal();}
-function changeMonth(d){state.month+=d;if(state.month>11){state.month=0;state.year++;}if(state.month<0){state.month=11;state.year--;}state.day=null;state.selSlots=[];document.getElementById('time-card').style.display='
+window.selectRoom=function(r){state.room=r;state.day=null;state.selSlots=[];document.querySelectorAll('.room-pill').forEach((p,i)=>p.classList.toggle('active',i===r));document.getElementById('time-card').style.display='none';document.getElementById('form-card').style.display='none';renderCal();};
+window.changeMonth=function(d){state.month+=d;if(state.month>11){state.month=0;state.year++;}if(state.month<0){state.month=11;state.year--;}state.day=null;state.selSlots=[];document.getElementById('time-card').style.display='none';document.getElementById('form-card').style.display='none';renderCal();};
+function renderCal(){const months=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];document.getElementById('cal-title').textContent=state.year+'년 '+months[state.month];const grid=document.getElementById('cal-grid');grid.innerHTML='';['일','월','화','수','목','금','토'].forEach(d=>{const el=document.createElement('div');el.className='cal-dow';el.textContent=d;grid.appendChild(el);});const first=new Date(state.year,state.month,1).getDay();const days=new Date(state.year,state.month+1,0).getDate();const today=new Date();for(let i=0;i<first;i++){const el=document.createElement('div');el.className='cal-day empty';grid.appendChild(el);}for(let d=1;d<=days;d++){const el=document.createElement('div');el.className='cal-day';el.textContent=d;const dateStr=state.year+'-'+(state.month+1)+'-'+d;const past=new Date(state.year,state.month,d)<new Date(today.getFullYear(),today.getMonth(),today.getDate());if(past)el.classList.add('past');if(d===today.getDate()&&state.month===today.getMonth()&&state.year===today.getFullYear())el.classList.add('today');if(d===state.day)el.classList.add('selected');if(state.bookings.some(b=>b.room===state.room&&b.date===dateStr))el.classList.add('has-booking');if(!past)el.onclick=(()=>{const _d=d;return()=>selectDay(_d);})();grid.appendChild(el);}}
+function selectDay(d){state.day=d;state.selSlots=[];renderCal();renderTimeSlots();document.getElementById('time-card').style.display='block';document.getElementById('form-card').style.display='none';}
+function getBookedSlots(){if(!state.day)return[];const dateStr=state.year+'-'+(state.month+1)+'-'+state.day;const booked=[];state.bookings.filter(b=>b.room===state.room&&b.date===dateStr).forEach(b=>{b.slots.forEach(s=>{if(!booked.includes(s))booked.push(s);});});return booked;}
+function renderTimeSlots(){const booked=getBookedSlots();document.getElementById('time-card-title').textContent=state.year+'년 '+(state.month+1)+'월 '+state.day+'일 — '+ROOMS[state.room];const grid=document.getElementById('time-grid');grid.innerHTML='';TIME_SECTIONS.forEach(sec=>{const title=document.createElement('div');title.className='time-section-title';title.textContent=sec.label+' ('+String(sec.range[0]).padStart(2,'0')+':00~'+String(sec.range[1]).padStart(2,'0')+':00)';grid.appendChild(title);for(let i=sec.range[0];i<sec.range[1];i++){const el=document.createElement('div');el.className='time-slot';el.textContent=SLOTS[i];if(booked.includes(i)){el.classList.add('booked');el.title='이미 예약됨';}else if(state.selSlots.includes(i))el.classList.add('selected');if(!booked.includes(i))el.onclick=(()=>{const _i=i;return()=>toggleSlot(_i);})();grid.appendChild(el);}});document.getElementById('form-card').style.display=state.selSlots.length>0?'block':'none';}
+function toggleSlot(i){const idx=state.selSlots.indexOf(i);if(idx>=0)state.selSlots.splice(idx,1);else state.selSlots.push(i);renderTimeSlots();}
+window.submitBooking=async function(){const name=document.getElementById('inp-name').value.trim();const tel=document.getElementById('inp-tel').value.trim();const purpose=document.getElementById('inp-purpose').value.trim();const agreed=document.getElementById('chk-agree').checked;if(!name||!tel){alert('이름과 연락처를 입력해주세요.');return;}if(!agreed){alert('책임 동의 항목을 체크해주세요.');return;}const dateStr=state.year+'-'+(state.month+1)+'-'+state.day;const slotsSorted=state.selSlots.sort((a,b)=>a-b);const slotLabels=slotsSorted.map(i=>SLOTS[i]).join(', ');const booking={action:'add',id:String(Date.now()),room:state.room,roomName:ROOMS[state.room],date:dateStr,slots:slotsSorted,slotLabels,name,tel,purpose};const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='저장 중...';try{await fetch(GAS_URL,{method:'POST',body:JSON.stringify(booking)});alert('예약 완료!\n\n공간: '+ROOMS[state.room]+'\n날짜: '+dateStr+'\n시간: '+slotLabels+'\n예약자: '+name);document.getElementById('inp-name').value='';document.getElementById('inp-tel').value='';document.getElementById('inp-purpose').value='';document.getElementById('chk-agree').checked=false;state.selSlots=[];await window.loadBookings();document.getElementById('time-card').style.display='none';document.getElementById('form-card').style.display='none';}catch(e){alert('저장 중 오류가 발생했습니다. 다시 시도해주세요.');}btn.disabled=false;btn.textContent='예약 신청';};
+window.switchTab=function(t){document.getElementById('tab-booking').style.display=t==='booking'?'block':'none';document.getElementById('tab-admin').style.display=t==='admin'?'block':'none';document.getElementById('tab-btn-booking').classList.toggle('active',t==='booking');document.getElementById('tab-btn-admin').classList.toggle('active',t==='admin');if(t==='admin'){window.loadBookings();window.renderAdmin();}};
+window.renderAdmin=function(){const rf=document.getElementById('admin-room-filter').value;const sort=document.getElementById('admin-sort').value;let list=[...state.bookings];if(rf!=='all')list=list.filter(b=>b.room===parseInt(rf));list.sort((a,b)=>{const da=new Date(a.date),db=new Date(b.date);return sort==='date-asc'?da-db:db-da;});document.getElementById('sum-total').textContent=state.bookings.length;document.getElementById('sum-r0').textContent=state.bookings.filter(b=>b.room===0).length;document.getElementById('sum-r1').textContent=state.bookings.filter(b=>b.room===1).length;const el=document.getElementById('admin-list');if(list.length===0){el.innerHTML='<div class="empty-state">예약 내역이 없습니다.</div>';return;}el.innerHTML=list.map(b=>`<div class="booking-item"><div><div class="booking-name">${b.name} <span style="font-size:12px;font-weight:400;color:#888">${b.tel}</span></div><div class="booking-meta">${ROOMS[b.room]} · ${b.date} · ${b.slotLabels}</div>${b.purpose?`<div class="booking-meta">${b.purpose}</div>`:''}</div><button class="btn-cancel" onclick="window.cancelBooking('${b.id}')">취소</button></div>`).join('');};
+window.cancelBooking=async function(id){if(!confirm('이 예약을 취소하시겠습니까?'))return;try{await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'cancel',id})});await window.loadBookings();window.renderAdmin();}catch(e){alert('취소 중 오류가 발생했습니다.');}};
+
+window.loadBookings();
+setInterval(window.loadBookings,60000);
+</script>
+</body>
+</html>
